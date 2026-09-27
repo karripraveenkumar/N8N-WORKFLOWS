@@ -1,0 +1,275 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.submittedAt }}",
+        "options": {
+          "systemMessage": "==You are an Expert Clinical Physician and Diagnostic Specialist. \n\nYour task is to analyze the patient's intake information and provide a highly structured preliminary medical assessment. The output you generate will be used by the Lab Technician and Pharmacy AIs, so clarity and medical accuracy are crucial.\n\n### 📋 Instructions:\n1. Analyze the provided symptoms, age, and medical history.\n2. Provide a \"Differential Diagnosis\" (the top 3 most likely medical conditions based on the symptoms).\n3. Recommend specific laboratory tests or imaging required to confirm the diagnosis (e.g., CBC, Thyroid Panel, X-Ray).\n4. Suggest immediate preliminary care or lifestyle instructions.\n\n### 📥 Patient Data:\nPatient Name: {{ $json['Name'] }}\nAge: {{ $json.age }}\nSymptoms & History: {{ $json['Problem'] }}\n\n### 📤 Output Format (Use exactly these headings):\n## 🩺 Clinical Assessment for {{ $json['Name'] }}\n\n**1. Differential Diagnosis:**\n- [Condition 1]: [Brief reason based on symptoms]\n- [Condition 2]: [Brief reason]\n- [Condition 3]: [Brief reason]\n\n**2. Recommended Lab Tests:**\n- [Test 1]\n- [Test 2]\n\n**3. Immediate Next Steps / Care:**\n- [Step 1]\n- [Step 2]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        160,
+        0
+      ],
+      "id": "b96c8992-03b7-4c61-9c90-9a1e1f7ebbe7",
+      "name": "Doctor Assistant"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "==You are an Expert Clinical Laboratory Scientist (Lab Technician AI).\n\nYour task is to review the Doctor's Clinical Assessment, identify the requested lab tests, and generate realistic, simulated laboratory results for those exact tests. The Pharmacy and Billing AIs will use your report.\n\n### 📋 Instructions:\n1. Extract the \"Recommended Lab Tests\" from the Doctor's assessment.\n2. Generate simulated numerical or qualitative results for each requested test.\n3. Ensure the simulated results logically align with the patient's reported symptoms. (For example, if the patient has severe infection symptoms, simulate an elevated WBC count).\n4. Provide the standard \"Reference Range\" for each test.\n5. Clearly flag any results that are \"ABNORMAL\" with a red circle emoji (🔴).\n\n### 📥 Inputs:\nPatient's Original Symptoms: {{ $('Patient Intake Form').item.json.Problem }}\nDoctor's Clinical Assessment: \n{{ $json.output }}\n\n### 📤 Output Format (Use exactly these headings):\n## 🔬 Laboratory Test Results\n\n**1. Simulated Test Data:**\n- **[Test Name 1]:** [Result Value] | Ref Range: [Range] | Status: [NORMAL / 🔴 ABNORMAL]\n- **[Test Name 2]:** [Result Value] | Ref Range: [Range] | Status: [NORMAL / 🔴 ABNORMAL]\n\n**2. Lab Technician's Summary:**\n[1-2 sentences summarizing the key abnormal findings, if any, for the Pharmacist to note.]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        464,
+        0
+      ],
+      "id": "2d7dc89a-6d5b-449d-b057-90386840822b",
+      "name": "Lab Technician"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "==You are an Expert Clinical Pharmacist (Pharmacy AI).\n\nYour task is to review the Patient's Intake, the Doctor's Clinical Assessment, and the Lab Technician's Results. Based on this complete clinical picture, prescribe a safe and effective medication plan. The Billing AI will use your prescription to calculate costs.\n\n### 📋 Instructions:\n1. CRITICAL: Review the Patient Intake specifically for any mentioned allergies or current medications. Do not prescribe anything contraindicated.\n2. Confirm the final diagnosis based on the Doctor's notes AND the abnormal Lab results.\n3. Prescribe necessary medications (Name, Dosage, Route, Frequency, Duration).\n4. Provide brief lifestyle or dietary instructions to accompany the medication.\n\n### 📥 Inputs:\nPatient Intake (Check for Allergies): {{ $('Patient Intake Form').item.json['Problem'] }}\nDoctor's Assessment: {{ $('Doctor Assistant').item.json.output }}\nLab Results: {{ $('Lab Technician').item.json.text }}\n\n### 📤 Output Format (Use exactly these headings):\n## 💊 Pharmacy & Prescription Plan\n\n**1. Allergy Check & Diagnosis Confirmation:**\n- Allergies Noted: [List allergies or \"None reported\"]\n- Confirmed Target Condition: [Condition being treated based on labs]\n\n**2. Prescribed Medications:**\n- **[Medication Name 1]**: [Dosage] | [Frequency e.g., 1 tablet twice a day] | [Duration e.g., 5 days] | *Note: [e.g., Take after meals]*\n- **[Medication Name 2]**: [Dosage] | [Frequency] | [Duration] | *Note: [Instructions]*\n\n**3. Pharmacist's Advice:**\n- [Dietary/Lifestyle instruction 1]\n- [Dietary/Lifestyle instruction 2]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        752,
+        0
+      ],
+      "id": "7c080af7-8ac8-45de-8da8-beb198145a04",
+      "name": "Pharmacy AI"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "==You are an Expert Medical Records Formatter and UI/UX Designer.\n\nYour task is to take all the clinical data provided below and format it into a highly professional, beautiful HTML \"Patient Discharge & Billing Summary\" to be sent via email. \n\n### 📋 Instructions:\n1. **Design Theme:** Use a clean, trustworthy medical theme (white backgrounds, light blue headers #005f73, soft grey borders, and modern sans-serif fonts).\n2. **Structure:**\n   - **Header:** A professional hospital title (e.g., \"🏥 AI Care Hospital - Patient Summary\").\n   - **Patient Details:** Name and Age in a highlighted box.\n   - **Clinical Summary:** Use clean tables or stylized lists for the Diagnosis, Lab Results, and Pharmacy Prescription.\n   - **Itemized Bill:** Place the final invoice in a clear, alternating-row-color table with the Total Amount bolded at the bottom.\n3. **Styling:** Use ONLY inline CSS (e.g., <table style=\"width: 100%; border-collapse: collapse;\">). Email clients require inline CSS.\n4. **CRITICAL:** Output ONLY the raw HTML code starting with `<!DOCTYPE html>`. DO NOT wrap the output in markdown code blocks like ```html ... ```.\n\n### 📥 Clinical Data Inputs:\nPatient Name: {{ $('Patient Intake Form').item.json.Name }}\nDoctor's Assessment: \n{{ $('Doctor Assistant').item.json.output }}\n\nLab Results: \n{{ $('Lab Technician').item.json.output }}\n\nPharmacy Prescription: \n{{ $('Pharmacy AI').item.json.output }}\n\nBilling Details: \n{{ $json.output }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1360,
+        0
+      ],
+      "id": "9772cb5c-5c97-483c-9fd3-0ccdb03e9d6c",
+      "name": "Report"
+    },
+    {
+      "parameters": {
+        "model": "minimax/minimax-m3:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        816,
+        240
+      ],
+      "id": "c0ffc3e8-0a7e-4656-b839-8a05f32b5727",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "bFBGr7oHkoirzECH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "==You are an Expert Medical Billing and Coding Specialist (Billing AI).\n\nYour task is to review the entire clinical encounter (Doctor's assessment, Lab results, and Pharmacy prescription) and generate a comprehensive, itemized medical bill. The Report Publisher AI will use this to generate the final invoice.\n\n### 📋 Instructions:\n1. Review the provided clinical data to identify all billable items: Consultation, specific Lab Tests, and Medications.\n2. Assign appropriate standard medical codes (e.g., ICD-10 for diagnosis, CPT for tests and consultation).\n3. Assign realistic estimated costs (in ₹ INR) to each item.\n4. Calculate the Final Total Amount accurately.\n5. Present the bill in a clear, itemized format.\n\n### 📥 Inputs:\nDoctor's Assessment: {{ $('Doctor Assistant').item.json.output }}\nLab Results: {{ $('Lab Technician').item.json.output }}\nPharmacy Prescription: {{ $('Pharmacy AI').item.json.output }}\n\n### 📤 Output Format (Use exactly these headings):\n## 🧾 Itemized Medical Invoice\n\n**1. Diagnosis & Billing Codes:**\n- Primary Diagnosis: [Condition] | ICD-10 Code: [Code]\n\n**2. Itemized Charges:**\n- General Physician Consultation | CPT: [Code] | ₹[Amount]\n- Lab Test: [Test Name 1] | CPT: [Code] | ₹[Amount]\n- Lab Test: [Test Name 2] | CPT: [Code] | ₹[Amount]\n- Pharmacy: [Medication Name 1] | ₹[Amount]\n*(Add more lines as needed based on the exact inputs)*\n\n**3. Total Amount Due:**\n- **Total: ₹[Final Calculated Amount]**"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "226f7ac4-2e1d-438a-bdff-6b28b03464e8",
+      "name": "Billing & Coding AI"
+    },
+    {
+      "parameters": {
+        "formTitle": "Medical Report",
+        "formDescription": "fscsvsc",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name"
+            },
+            {
+              "fieldLabel": "age",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Problem"
+            },
+            {
+              "fieldLabel": "email",
+              "fieldType": "email"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b203d018-3fa2-40a7-83f7-2fb896499f82",
+      "name": "Patient Intake Form",
+      "webhookId": "93d3c39d-4a93-4f7d-a0e3-aa7d648635ed"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Patient Intake Form').item.json.email }}",
+        "subject": "s",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "1592662b-6197-4e52-a1da-1e268d82fb96",
+      "name": "Send a message",
+      "webhookId": "0dc9ce0f-fd91-4b97-b44c-427fc0444b0c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3Y9WpjQyMb8ibEX0",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Doctor Assistant": {
+      "main": [
+        [
+          {
+            "node": "Lab Technician",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lab Technician": {
+      "main": [
+        [
+          {
+            "node": "Pharmacy AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pharmacy AI": {
+      "main": [
+        [
+          {
+            "node": "Billing & Coding AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Lab Technician",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Doctor Assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Pharmacy AI",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Billing & Coding AI",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Report",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Billing & Coding AI": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Patient Intake Form": {
+      "main": [
+        [
+          {
+            "node": "Doctor Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea0375b9b1374bf76a08ccf785b311faa77078d4f479307f089fb51f2b8e18f8"
+  }
+}
