@@ -1,0 +1,327 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "6fba667e-ac8c-4538-9c98-d6d20596c0f5",
+      "name": "Every Day 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Today is {{ $now.toFormat(\"MMMM d, yyyy\") }}. Pick ONE new, recently launched or trending tech product to feature on Instagram today. Avoid repeating obvious mainstream picks; vary the category (phones, laptops, wearables, smart home, AI gadgets, audio, etc.). Write an engaging, upbeat Instagram caption (2-4 short sentences, use a few emojis) and a set of relevant hashtags.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a tech content strategist for an Instagram page focused on new tech products. You produce fresh, factual, engaging daily post content. Always return valid structured output matching the schema."
+        }
+      },
+      "id": "200dd4b4-8da3-4efe-aeaf-a9c69875c488",
+      "name": "Content Strategist",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"product_name\":\"Example Tech Gadget X1\",\"caption\":\"An engaging Instagram caption about the product, 2-4 short sentences with emojis.\",\"hashtags\":[\"#tech\",\"#gadgets\",\"#innovation\"]}"
+      },
+      "id": "31e128a3-4f52-4ea2-b429-a8cfecb4efa5",
+      "name": "Strategist Output",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a single, detailed image-generation prompt for a scroll-stopping, photorealistic square (1:1) Instagram image featuring this tech product: \"{{ $json.output.product_name }}\". Caption context: \"{{ $json.output.caption }}\". Describe subject, composition, lighting, background, color palette and mood. Do NOT include any text, words, logos or watermarks in the image.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an art director. You turn a product brief into one vivid, concrete image-generation prompt optimized for a photorealistic square Instagram post. Always return valid structured output matching the schema."
+        }
+      },
+      "id": "723c0acd-3da7-49e4-bde2-77fad3237bf9",
+      "name": "Art Director",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        576,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"image_prompt\":\"A detailed, photorealistic image-generation prompt describing a visually striking product shot for Instagram (square 1:1), including subject, style, lighting, background and mood.\"}"
+      },
+      "id": "f497e7ab-5105-41a2-9dce-edeb2a3a0e3c",
+      "name": "Art Director Output",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.imgbb.com/1/upload",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "4ce55ceaa4b3b3b3858b520990294e12"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d2bf4d5a-a48b-4638-9627-279a41bd7a50",
+      "name": "Upload to ImgBB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1312,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "node": "=17841415440572164",
+        "imageUrl": "={{ $(\"Upload to ImgBB\").item.json.data.url }}",
+        "caption": "={{ $(\"Content Strategist\").item.json.output.caption }}\n\n{{ ($(\"Content Strategist\").item.json.output.hashtags || []).join(\" \") }}",
+        "additionalFields": {}
+      },
+      "id": "bec65f03-5b46-40d6-8260-fe818bc6017c",
+      "name": "Publish",
+      "type": "@mookielianhd/n8n-nodes-instagram.instagram",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        208
+      ],
+      "credentials": {
+        "instagramApi": {
+          "id": "37aBs5eGbqoLg5Wg",
+          "name": "Instagram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        208
+      ],
+      "id": "24002136-87a4-4712-9d6b-855944cfb686",
+      "name": "Wait",
+      "webhookId": "76c495b2-affc-469b-9066-b1bd699e133e"
+    },
+    {
+      "parameters": {
+        "model": "minimax/minimax-m3:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        80,
+        416
+      ],
+      "id": "8d9448ae-a8bf-41db-9624-d920a374b89a",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "bFBGr7oHkoirzECH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "minimax/minimax-m3:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        528,
+        416
+      ],
+      "id": "d726b3a7-02e2-4898-b3a1-532b451c27c7",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "bFBGr7oHkoirzECH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://image.pollinations.ai/prompt/(https://image.pollinations.ai/prompt/){{$json.output.image_prompt}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1104,
+        208
+      ],
+      "id": "c15a3beb-ffc4-4aba-82e0-51d2eb8af395",
+      "name": "HTTP Request"
+    }
+  ],
+  "connections": {
+    "Every Day 9AM": {
+      "main": [
+        [
+          {
+            "node": "Content Strategist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Strategist": {
+      "main": [
+        [
+          {
+            "node": "Art Director",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Strategist Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content Strategist",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Art Director": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Art Director Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Art Director",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to ImgBB": {
+      "main": [
+        [
+          {
+            "node": "Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Strategist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Art Director",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Upload to ImgBB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea0375b9b1374bf76a08ccf785b311faa77078d4f479307f089fb51f2b8e18f8"
+  }
+}
