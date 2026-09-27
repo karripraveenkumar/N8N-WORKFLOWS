@@ -1,0 +1,367 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Resume Analyzer",
+        "formDescription": "Upload your resume and receive personalized job recommendations based on your skills and available LinkedIn job listings.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Upload Resume",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5813a008-ded4-4692-9056-b0fa688d6978",
+      "name": "On form submission",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -64,
+        64
+      ],
+      "webhookId": "df73b7ca-a148-4f99-a670-3e6019e6f3e6"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Upload_Resume",
+        "options": {}
+      },
+      "id": "4a1e41cb-4e19-4b03-bd28-6f14be5741ec",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "name-001",
+              "name": "candidate_name",
+              "value": "={{ $('On form submission').item.json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "email-001",
+              "name": "candidate_email",
+              "value": "={{ $('On form submission').item.json.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "resume-001",
+              "name": "resume_text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bb170f3b-0be5-421d-8fb6-3fadec709923",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        336,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Candidate Name:\n{{ $json.candidate_name }}\n\nCandidate Email:\n{{ $json.candidate_email }}\n\nResume Text:\n{{ $json.resume_text }}\n\nAnalyze this resume and determine the most suitable job roles for this candidate.\n\nCreate a LinkedIn search query using 3 to 5 highly relevant job titles based strictly on the candidate's resume.\n\nAlso identify the candidate's experience level, location if explicitly mentioned, and strongest skills.\n\nReturn only valid JSON.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert Resume Analyst and Job Search Strategist.\n\nAnalyze the candidate resume strictly from the information provided.\n\nIdentify the candidate's:\n- Experience level\n- Location if explicitly mentioned\n- Strongest technical skills\n- Strongest professional skills\n- Main career direction\n- Best-fit job roles\n\nThen create ONE LinkedIn job search query containing 3 to 5 relevant job titles separated by OR.\n\nExample:\nPython Developer OR Backend Developer OR Junior Software Engineer OR Full Stack Developer\n\nRules:\n- Never invent skills.\n- Never invent experience.\n- Never invent education.\n- Never invent certifications.\n- Never invent a location.\n- Do not recommend senior roles if the candidate is entry-level.\n- Only recommend roles supported by the resume.\n- If location is not available, use an empty string.\n- Return ONLY valid JSON."
+        }
+      },
+      "id": "c77cd6b1-7d9f-4ce2-9d43-9a8506b79e0b",
+      "name": "Resume Analyzer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        576,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"candidate_name\": \"John Doe\",\n  \"candidate_email\": \"john@example.com\",\n  \"experience_level\": \"Entry-level\",\n  \"location\": \"Hyderabad\",\n  \"strongest_skills\": [\"Python\", \"React\", \"SQL\"],\n  \"best_fit_roles\": [\"Python Developer\", \"Full Stack Developer\", \"Junior Software Engineer\"],\n  \"linkedin_search_query\": \"Python Developer OR Full Stack Developer OR Junior Software Engineer\"\n}"
+      },
+      "id": "962473dd-f419-4533-b438-3840c8415e49",
+      "name": "Resume Analysis Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search/?keywords=' + encodeURIComponent($json.output.linkedin_search_query || '') + '&location=' + encodeURIComponent($json.output.location || '') + '&start=0' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "a3b654af-2df2-470d-8f4f-5bb810baf157",
+      "name": "LinkedIn Jobs Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json;\n\nlet html = '';\n\nif (typeof input.data === 'string') {\n  html = input.data;\n} else if (typeof input.body === 'string') {\n  html = input.body;\n} else if (typeof input.response === 'string') {\n  html = input.response;\n} else {\n  html = '';\n}\n\nfunction decode(value) {\n  return String(value || '')\n    .replace(/&amp;/gi, '&')\n    .replace(/&quot;/gi, '\"')\n    .replace(/&#39;/gi, \"'\")\n    .replace(/&apos;/gi, \"'\")\n    .replace(/&lt;/gi, '<')\n    .replace(/&gt;/gi, '>')\n    .replace(/&#x27;/gi, \"'\")\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nfunction stripTags(value) {\n  return decode(String(value || '').replace(/<[^>]*>/g, ' '));\n}\n\nconst jobs = [];\n\nif (html) {\n  const cardRegex = /<li[^>]*>([\\s\\S]*?)<\\/li>/gi;\n  let match;\n\n  while ((match = cardRegex.exec(html)) !== null) {\n    const card = match[1];\n\n    const titleMatch = card.match(/class=[\"'][^\"']*base-search-card__title[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/h3>/i);\n    const companyMatch = card.match(/class=[\"'][^\"']*base-search-card__subtitle[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/h4>/i);\n    const locationMatch = card.match(/class=[\"'][^\"']*job-search-card__location[^\"']*[\"'][^>]*>([\\s\\S]*?)<\\/span>/i);\n    const urlMatch = card.match(/href=[\"']([^\"']*\\/jobs\\/view\\/[^\"']+)[\"']/i);\n\n    if (!titleMatch) continue;\n\n    const title = stripTags(titleMatch[1]);\n    const company = companyMatch ? stripTags(companyMatch[1]) : 'Not available';\n    const location = locationMatch ? stripTags(locationMatch[1]) : 'Not available';\n    const url = urlMatch ? decode(urlMatch[1]) : 'Not available';\n\n    if (!title) continue;\n\n    const exists = jobs.some(job =>\n      job.job_title.toLowerCase() === title.toLowerCase() &&\n      job.company.toLowerCase() === company.toLowerCase()\n    );\n\n    if (!exists) {\n      jobs.push({\n        job_title: title,\n        company: company,\n        location: location,\n        job_url: url\n      });\n    }\n\n    if (jobs.length >= 20) break;\n  }\n}\n\nreturn [\n  {\n    json: {\n      linkedin_jobs: jobs,\n      linkedin_jobs_found: jobs.length,\n      linkedin_search_status: jobs.length > 0 ? 'Jobs found' : 'No jobs found or LinkedIn did not return public job data'\n    }\n  }\n];"
+      },
+      "id": "dd2d9d13-e8d9-4ae2-a001-fce2b714c160",
+      "name": "Parse LinkedIn Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=CANDIDATE NAME:\n{{ $('Edit Fields').item.json.candidate_name }}\n\nCANDIDATE EMAIL:\n{{ $('Edit Fields').item.json.candidate_email }}\n\nRESUME TEXT:\n{{ $('Edit Fields').item.json.resume_text }}\n\nLINKEDIN SEARCH STATUS:\n{{ $('Parse LinkedIn Jobs').item.json.linkedin_search_status }}\n\nNUMBER OF LINKEDIN JOBS FOUND:\n{{ $('Parse LinkedIn Jobs').item.json.linkedin_jobs_found }}\n\nLINKEDIN JOBS:\n{{ JSON.stringify($('Parse LinkedIn Jobs').item.json.linkedin_jobs || []) }}\n\nAnalyze the resume and compare it with the LinkedIn jobs.\n\nReturn the complete personalized resume analysis and job recommendation report as valid JSON only.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the final AI Resume Analyzer and Personalized Job Recommendation Agent.\n\nYour task is to analyze a candidate's resume and compare it against the LinkedIn job listings supplied to you.\n\nRESUME ANALYSIS:\n\nIdentify:\n- Candidate profile\n- Education\n- Work experience\n- Experience level\n- Technical skills\n- Programming languages\n- Frameworks\n- Databases\n- Cloud/DevOps skills\n- AI/ML skills\n- Web development skills\n- Projects\n- Certifications\n- Strongest skills\n- Weaknesses\n- Missing skills\n\nBEST-FIT ROLES:\n\nRecommend the most realistic roles for the candidate.\n\nFor each role provide:\n- Role\n- Match percentage\n- Why the candidate fits\n- Matching skills\n- Missing skills\n\nLINKEDIN JOB MATCHING:\n\nCompare every supplied LinkedIn job against the candidate's resume.\n\nConsider:\n- Job title\n- Skills visible in the job listing\n- Candidate skills\n- Experience level\n- Experience requirements if available\n- Location if available\n- Overall relevance\n\nUse these match levels:\nHIGH\nMEDIUM\nLOW\n\nRecommend HIGH and MEDIUM match jobs.\n\nFor every recommended job provide:\n- Exact job title from input\n- Exact company from input\n- Exact location from input\n- Work mode if available\n- Match percentage\n- Match level\n- Matching skills\n- Missing skills\n- Why it matches\n- Exact job URL from input\n\nCRITICAL RULES:\n\n1. Use ONLY information present in the resume and supplied LinkedIn job data.\n2. Never invent a job.\n3. Never invent a company.\n4. Never invent a URL.\n5. Never invent skills.\n6. Never invent experience.\n7. Never invent education.\n8. Never guarantee employment.\n9. Do not claim a job is suitable just because the title looks similar.\n10. Compare the candidate's actual skills with the available job information.\n11. If job descriptions are not available, be honest that the match is based on the available job title/company/location information only.\n12. If no suitable jobs are available, return an empty job recommendation array.\n13. Do not fabricate missing information.\n14. Use 'Not available' when information is missing.\n15. Keep recommendations realistic and useful.\n\nIf LinkedIn returned no jobs, clearly state in the final recommendation that no suitable public LinkedIn job listings were available from the current search.\n\nReturn ONLY valid JSON matching the connected Structured Output Parser."
+        }
+      },
+      "id": "4ac4d540-5e7f-406f-a221-5dc124bb8cbb",
+      "name": "Final Resume & Job Matcher",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1424,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"candidate_name\": \"John Doe\",\n  \"candidate_email\": \"john@example.com\",\n  \"profile_summary\": \"A concise summary of the candidate's profile.\",\n  \"strengths\": [\n    \"Python\",\n    \"React\",\n    \"SQL\"\n  ],\n  \"weaknesses\": [\n    \"Limited professional experience\"\n  ],\n  \"best_fit_roles\": [\n    {\n      \"role\": \"Junior Software Engineer\",\n      \"match_percentage\": 88,\n      \"why\": \"The candidate has relevant programming and project experience.\",\n      \"matching_skills\": [\"Python\", \"SQL\"],\n      \"missing_skills\": [\"Docker\"]\n    }\n  ],\n  \"linkedin_job_recommendations\": [\n    {\n      \"job_title\": \"Junior Software Engineer\",\n      \"company\": \"Example Company\",\n      \"location\": \"Hyderabad\",\n      \"work_mode\": \"Not available\",\n      \"match_percentage\": 88,\n      \"match_level\": \"HIGH\",\n      \"matching_skills\": [\"Python\", \"SQL\"],\n      \"missing_skills\": [\"Docker\"],\n      \"why_it_matches\": \"The available job information is relevant to the candidate's skills.\",\n      \"job_url\": \"https://www.linkedin.com/jobs/view/123456789/\"\n    }\n  ],\n  \"skills_to_improve\": [\n    \"Docker\",\n    \"Automated testing\"\n  ],\n  \"final_recommendation\": \"Focus on the highest-match roles and improve the identified skill gaps.\"\n}"
+      },
+      "id": "c8c30c89-6252-483e-b3e9-fbbd668b5143",
+      "name": "Final Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1648,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "={{ 'Resume Analysis & Job Recommendations - ' + ($json.output.candidate_name || $('On form submission').item.json.Name) }}",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>Resume Analysis Report</title>\n</head>\n<body style=\"margin:0;padding:0;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;\">\n\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#f4f6f8;padding:25px 0;\">\n<tr>\n<td align=\"center\">\n\n<table width=\"680\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff;border-radius:10px;overflow:hidden;\">\n\n<tr>\n<td style=\"background:#1f2937;padding:25px;color:#ffffff;\">\n<h1 style=\"margin:0;font-size:23px;\">Resume Analysis Report</h1>\n<p style=\"margin:8px 0 0;font-size:14px;\">Personalized Job Recommendations</p>\n</td>\n</tr>\n\n<tr>\n<td style=\"padding:25px;color:#333333;font-size:14px;line-height:1.6;\">\n\n<p>Hi <strong>{{ $json.output.candidate_name || $('On form submission').item.json.Name }}</strong>,</p>\n\n<p>\nYour resume has been analyzed based on your skills, education, experience, projects and career profile. Available LinkedIn job listings were also compared with your profile.\n</p>\n\n<h2 style=\"font-size:19px;color:#111827;\">Profile Summary</h2>\n<p>{{ $json.output.profile_summary }}</p>\n\n<h2 style=\"font-size:19px;color:#111827;\">Your Strongest Skills</h2>\n<ul>\n{{ ($json.output.strengths || []).map(skill => '<li>' + skill + '</li>').join('') }}\n</ul>\n\n<h2 style=\"font-size:19px;color:#111827;\">Weaknesses / Skill Gaps</h2>\n<ul>\n{{ ($json.output.weaknesses || []).map(skill => '<li>' + skill + '</li>').join('') }}\n</ul>\n\n<h2 style=\"font-size:19px;color:#111827;\">Best-Fit Job Roles</h2>\n\n{{ ($json.output.best_fit_roles || []).map(role => '<div style=\"border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:12px 0;background:#fafafa;\"><div style=\"font-size:16px;font-weight:bold;\">' + role.role + '</div><div style=\"margin-top:7px;\"><strong>Suitability:</strong> ' + role.match_percentage + '%</div><div style=\"margin-top:7px;\"><strong>Why you fit:</strong> ' + role.why + '</div><div style=\"margin-top:7px;\"><strong>Matching skills:</strong> ' + (role.matching_skills || []).join(', ') + '</div><div style=\"margin-top:7px;\"><strong>Missing skills:</strong> ' + (role.missing_skills || []).join(', ') + '</div></div>').join('') }}\n\n<h2 style=\"font-size:19px;color:#111827;\">Recommended LinkedIn Jobs</h2>\n\n{{ ($json.output.linkedin_job_recommendations || []).length > 0 ? ($json.output.linkedin_job_recommendations || []).map(job => '<div style=\"border:1px solid #dbe3ea;border-radius:9px;padding:17px;margin:14px 0;\"><div style=\"font-size:17px;font-weight:bold;\">' + job.job_title + '</div><div style=\"margin-top:5px;font-size:14px;\">' + job.company + ' · ' + job.location + '</div><div style=\"margin-top:9px;\"><strong>Match:</strong> ' + job.match_percentage + '% · <strong>' + job.match_level + '</strong></div><div style=\"margin-top:7px;\"><strong>Matching Skills:</strong> ' + (job.matching_skills || []).join(', ') + '</div><div style=\"margin-top:7px;\"><strong>Missing Skills:</strong> ' + (job.missing_skills || []).join(', ') + '</div><div style=\"margin-top:7px;\"><strong>Why it matches:</strong> ' + job.why_it_matches + '</div><div style=\"margin-top:15px;\"><a href=\"' + job.job_url + '\" style=\"display:inline-block;background:#0a66c2;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:6px;font-weight:bold;\">View Job on LinkedIn</a></div></div>').join('') : '<div style=\"background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:15px;\">No strong matching LinkedIn jobs were found in the available search results.</div>' }}\n\n<h2 style=\"font-size:19px;color:#111827;\">Skills You Should Improve</h2>\n<ul>\n{{ ($json.output.skills_to_improve || []).map(skill => '<li>' + skill + '</li>').join('') }}\n</ul>\n\n<h2 style=\"font-size:19px;color:#111827;\">Final Recommendation</h2>\n<div style=\"background:#f3f4f6;border-radius:8px;padding:15px;\">\n{{ $json.output.final_recommendation }}\n</div>\n\n<p style=\"margin-top:30px;\">Best regards,<br><strong>AI Resume Analyzer</strong></p>\n\n</td>\n</tr>\n\n<tr>\n<td style=\"background:#f9fafb;padding:15px;text-align:center;color:#6b7280;font-size:11px;\">\nThis is an automated resume analysis report.\n</td>\n</tr>\n\n</table>\n\n</td>\n</tr>\n</table>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "7a7bb680-f983-472f-92c3-9231b135c104",
+      "name": "Send Resume Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        64
+      ],
+      "webhookId": "1febb2ec-7635-4277-8ccb-4ca63fc4837c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3Y9WpjQyMb8ibEX0",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "minimax/minimax-m3:free",
+        "options": {}
+      },
+      "id": "23cba0d2-65d6-4c47-8009-c19d476e16e2",
+      "name": "OpenRouter Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        576,
+        576
+      ],
+      "credentials": {
+        "openRouterApi": {
+          "id": "bFBGr7oHkoirzECH",
+          "name": "OpenRouter account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Resume Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Analyzer": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Jobs Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Analysis Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Resume Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Jobs Search": {
+      "main": [
+        [
+          {
+            "node": "Parse LinkedIn Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LinkedIn Jobs": {
+      "main": [
+        [
+          {
+            "node": "Final Resume & Job Matcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Resume & Job Matcher": {
+      "main": [
+        [
+          {
+            "node": "Send Resume Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Final Resume & Job Matcher",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Resume Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Final Resume & Job Matcher",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "ea0375b9b1374bf76a08ccf785b311faa77078d4f479307f089fb51f2b8e18f8"
+  }
+}
