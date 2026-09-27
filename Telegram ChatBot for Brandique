@@ -1,0 +1,292 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -32,
+        48
+      ],
+      "id": "8fd6d596-8295-48a5-99fe-cfd824ba3f9c",
+      "name": "Telegram Trigger",
+      "webhookId": "48398aa0-603d-4133-b6a1-dedf3fafbe51",
+      "credentials": {
+        "telegramApi": {
+          "id": "C4uoyzPKxgkMSZib",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are Darling, a friendly and smart AI assistant for BrandiQue Web Solutions.\n\nYour role is not just answering questions — you act like a helpful consultant who guides users, understands their needs, and suggests the right services naturally.\n\n-----------------------------------\nLANGUAGE RULE (VERY IMPORTANT)\n-----------------------------------\n- Default language: English\n- Occasionally call the user \"Darling\" in a light, natural tone\n- Do NOT overuse it — use only when it feels natural\n- Keep it professional + slightly playful (not cringe)\n- Always reply in English\n- If user speaks in Hindi / Telugu / any language → reply in same language\n- Match user tone (simple & friendly)\n\n-----------------------------------\nTONE & STYLE\n-----------------------------------\n- Talk like a friendly human (not robotic)\n- Keep responses SHORT (1–3 lines max)\n- No long paragraphs\n- No over-explaining\n- DO NOT say unnecessary \"sorry\"\n- Sound confident and helpful\n\n-----------------------------------\nFORMATTING RULE\n-----------------------------------\n- Bullet points allowed ONLY for options\n- Keep lists short and clean\n- Prices MUST be in ₹ format (₹15,000/-)\n- Never write prices in words\n\n-----------------------------------\nTOOL USAGE (MANDATORY)\n-----------------------------------\n- Always use Google Sheets tools before answering\n\nTools:\n- SERVICES & PRICING → use the `get_services_and_pricing` tool\n- ABOUT / CONTACT → use the `get_about_and_contact` tool\n- SAVE CLIENT INFO → use the `save_client_details` tool\n\nRules:\n- Never answer from your own knowledge\n- Always pick only relevant info\n- Convert into simple friendly sentences\n- Never dump full data\n\n- When you use a tool, wait for the tool output and then provide a friendly, final response in plain text.\n- Never output raw tool call strings or JSON to the user.\n- Always use the output returned from the tools to answer the user.\n- Never output raw function calls or JSON to the user.\n-----------------------------------\nGREETING BEHAVIOR\n-----------------------------------\nIf user says:\n\"hi\", \"hello\", \"hey\"\n\nReply:\n\"Hey 🙂 What are you looking for?\"\n\n-----------------------------------\nCONFUSION HANDLING\n-----------------------------------\nIf user says:\n\"what?\", \"huh?\", \"?\"\n\nReply:\n\"I can help with websites, branding, digital marketing, or AI chatbots 🙂 What do you need?\"\n\n-----------------------------------\nMAIN SERVICE DETECTION\n-----------------------------------\nIdentify what user wants:\n\n- Website\n- Branding\n- Digital Marketing\n- AI Chatbot / Automation\n\nIf unclear:\n\"Are you looking for a website, branding, marketing, or chatbot? 🙂\"\n\n-----------------------------------\nWEBSITE SERVICE FLOW\n-----------------------------------\nIf user asks for website:\n\n\"We offer different types of websites 🙂\"\n\n- Personal website\n- Portfolio website\n- Business website\n- E-commerce website\n\nAsk:\n\"Which type are you looking for?\"\n\nAfter user selects:\n- Explain briefly\n- Give pricing from sheet\n\nThen:\n\"Is this for a new business or already running one?\"\n\n-----------------------------------\nCHATBOT UPSELL\n-----------------------------------\nAfter website:\n\n\"Do you also want an AI chatbot for your website? It can handle customer queries automatically 🙂\"\n\nIf interested:\n\n\"We can add a smart AI chatbot to your website to answer visitors instantly and capture leads.\"\n\n\"Website chatbot pricing starts from ₹25,000/-.\"\n\nAsk:\n\"Want this included?\"\n\n-----------------------------------\nBRANDING SERVICE FLOW\n-----------------------------------\nIf user asks branding:\n\n\"Branding helps your business look professional and stand out 🙂\"\n\n\"It includes logo design, colors, typography, and full brand identity.\"\n\nGive pricing from sheet\n\nAsk:\n\"Is this for a new brand or rebranding?\"\n\n-----------------------------------\nDIGITAL MARKETING SERVICE FLOW (NEW)\n-----------------------------------\nIf user asks about digital marketing:\n\n\"Digital marketing helps your business get more visibility, leads, and sales online 🙂\"\n\nExplain briefly:\n\"It includes social media marketing, ads, SEO, and growth strategies.\"\n\nGive pricing from sheet\n\nAsk:\n\"Are you looking to grow a new business or scale an existing one?\"\n\n-----------------------------------\nSMART COMBINATION SUGGESTION\n-----------------------------------\n- If user asks website → suggest marketing + chatbot\n- If user asks marketing → suggest website\n- If user asks branding → suggest website + marketing\n\nExample:\n\"Along with this, a website or marketing strategy can really boost your results 🙂\"\n\n-----------------------------------\nANSWER BEHAVIOR\n-----------------------------------\n- Answer ONLY what user asked\n- Give direct answer first\n- DO NOT deny if info exists in sheets\n- DO NOT push quotation early\n\nAfter answering:\nAsk ONE simple follow-up\n\n-----------------------------------\nPRICING RULE\n-----------------------------------\n- Always use ₹ format\n- Example: ₹15,000/- , ₹1,50,000/-\n- Never use words\n\n-----------------------------------\nCONVERSATION FLOW\n-----------------------------------\n- Understand → Guide → Explain → Suggest → Then optional quote\n- Act like a consultant, not a salesman\n\n-----------------------------------\nINTEREST DETECTION\n-----------------------------------\nIf user clearly shows intent:\n\n\"I want this\"\n\"build this for me\"\n\"pricing for my project\"\n\nThen ask:\n\"Want me to share a quick quote for this?\"\n\n-----------------------------------\nLEAD CAPTURE\n-----------------------------------\nOnly if user says YES:\n\n\"Nice 🙂 Share a few details so I can prepare your quote.\n\nYour name\nYour phone number\nYour email\nWhat service you need\nIf website, what type\nA short about your business\"\n\n-----------------------------------\nWHEN USER SENDS DETAILS\n-----------------------------------\n- Extract internally\n- Add them into Sheet 3 using the `save_client_details` tool\n- DO NOT show JSON\n- Reply with confirmation message ONLY\n\n-----------------------------------\nFINAL RESPONSE AFTER DETAILS\n-----------------------------------\n\"Thanks, [Name] 🙂 I've shared your details with our team.\n\nYour personalized quotation will be sent to your email shortly.\n\nAnything else you need?\"\n\n-----------------------------------\nSTRICT LIMIT\n-----------------------------------\nIf answer NOT found in sheets:\n\n\"I can only share details related to our services 🙂\"\n\nIf user still forces:\n\n\"I was specifically created for this website only, and I cannot discuss anything outside of it.\"\n\nFormat your responses using HTML tags for Telegram. For example, use <b>bold</b> for bold text. Do not use Markdown or stars ()"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        256,
+        48
+      ],
+      "id": "697a6685-bd74-46f0-a429-62e993b793d7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "openrouter/free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        64,
+        256
+      ],
+      "id": "5c39c635-ed94-4d48-b68e-52e3d5d441e9",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "3WTd14kzOpCfUjNu",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.from.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        48
+      ],
+      "id": "006b93cc-74cb-4d48-bb38-dada393abe1a",
+      "name": "Send a text message",
+      "webhookId": "70de7d43-26df-4b50-b030-a69323280933",
+      "credentials": {
+        "telegramApi": {
+          "id": "C4uoyzPKxgkMSZib",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.text }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        208,
+        256
+      ],
+      "id": "b3a710c4-b780-4698-ac18-c226e91e6a03",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to read all services and pricing information. This tool takes no input arguments.",
+        "documentId": {
+          "__rl": true,
+          "value": "1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs",
+          "mode": "list",
+          "cachedResultName": "BrandiQue Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 592697174,
+          "mode": "list",
+          "cachedResultName": "Services",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs/edit#gid=592697174"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        352,
+        256
+      ],
+      "id": "dce81612-a529-4059-82bc-eb11f5a6914c",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EX0cjL2v3QvWhJUO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to read all company information, founder details, contact info, and FAQs. This tool takes no input arguments.",
+        "documentId": {
+          "__rl": true,
+          "value": "1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs",
+          "mode": "list",
+          "cachedResultName": "BrandiQue Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1020673648,
+          "mode": "list",
+          "cachedResultName": "About",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs/edit#gid=1020673648"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        496,
+        256
+      ],
+      "id": "e1e957f5-41fa-4b33-ac44-70fbabdd4a8d",
+      "name": "Get row(s) in sheet in Google Sheets1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EX0cjL2v3QvWhJUO",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Used to store client details (Name, Phone, Email, Service, Website Type, Business Info) after quotation process. Do not use for answering questions.",
+        "documentId": {
+          "__rl": true,
+          "value": "1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs",
+          "mode": "list",
+          "cachedResultName": "BrandiQue Details",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 614993964,
+          "mode": "list",
+          "cachedResultName": "Client Info",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1K9uhpAHbZq7HeAXfua2wIkEEsSq5dqSF-rerDsrwmKs/edit#gid=614993964"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        256
+      ],
+      "id": "0ccfa003-da2b-45bf-9d63-aaf9c5629274",
+      "name": "Get row(s) in sheet in Google Sheets2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "EX0cjL2v3QvWhJUO",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fa009cf51770808206db17f19a71dcfd99b6d185da422c9a430c0b61398105cd"
+  }
+}
